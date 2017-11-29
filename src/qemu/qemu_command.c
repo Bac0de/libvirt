@@ -7988,15 +7988,6 @@ qemuBuildGraphicsVNCCommandLine(virQEMUDriverConfigPtr cfg,
     if (graphics->data.vnc.keymap)
         virCommandAddArgList(cmd, "-k", graphics->data.vnc.keymap, NULL);
 
-    /* Unless user requested it, set the audio backend to none, to
-     * prevent it opening the host OS audio devices, since that causes
-     * security issues and might not work when using VNC.
-     */
-    if (cfg->vncAllowHostAudio)
-        virCommandAddEnvPassBlockSUID(cmd, "QEMU_AUDIO_DRV", NULL);
-    else
-        virCommandAddEnvString(cmd, "QEMU_AUDIO_DRV=none");
-
     return 0;
 
  error:
@@ -8238,10 +8229,6 @@ qemuBuildGraphicsSPICECommandLine(virQEMUDriverConfigPtr cfg,
     if (graphics->data.spice.keymap)
         virCommandAddArgList(cmd, "-k",
                              graphics->data.spice.keymap, NULL);
-    /* SPICE includes native support for tunnelling audio, so we
-     * set the audio backend to point at SPICE's own driver
-     */
-    virCommandAddEnvString(cmd, "QEMU_AUDIO_DRV=spice");
 
     return 0;
 
@@ -8271,13 +8258,6 @@ qemuBuildGraphicsCommandLine(virQEMUDriverConfigPtr cfg,
             virCommandAddEnvPair(cmd, "DISPLAY", graphics->data.sdl.display);
         if (graphics->data.sdl.fullscreen)
             virCommandAddArg(cmd, "-full-screen");
-
-        /* If using SDL for video, then we should just let it
-         * use QEMU's host audio drivers, possibly SDL too
-         * User can set these two before starting libvirtd
-         */
-        virCommandAddEnvPassBlockSUID(cmd, "QEMU_AUDIO_DRV", NULL);
-        virCommandAddEnvPassBlockSUID(cmd, "SDL_AUDIODRIVER", NULL);
 
         /* New QEMU has this flag to let us explicitly ask for
          * SDL graphics. This is better than relying on the
@@ -10032,11 +10012,6 @@ qemuBuildCommandLine(virQEMUDriverPtr driver,
         } else {
             virCommandAddArg(cmd, "-nographic");
         }
-
-        if (cfg->nogfxAllowHostAudio)
-            virCommandAddEnvPassBlockSUID(cmd, "QEMU_AUDIO_DRV", NULL);
-        else
-            virCommandAddEnvString(cmd, "QEMU_AUDIO_DRV=none");
     }
 
     /* Disable global config files and default devices */
