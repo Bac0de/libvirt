@@ -2202,10 +2202,6 @@ qemuParseCommandLine(virCapsPtr caps,
             def->virtType = VIR_DOMAIN_VIRT_KVM;
         } else if (STREQ(arg, "-nographic")) {
             nographics = true;
-        } else if (STREQ(arg, "-display")) {
-            WANT_VALUE();
-            if (STREQ(val, "none"))
-                nographics = true;
         } else if (STREQ(arg, "-full-screen")) {
             fullscreen = true;
         } else if (STREQ(arg, "-localtime")) {
@@ -2654,29 +2650,6 @@ qemuParseCommandLine(virCapsPtr caps,
         if (first_rbd_disk->src->nhosts == 0) {
             virReportError(VIR_ERR_INTERNAL_ERROR,
                            _("found no rbd hosts in CEPH_ARGS '%s'"), ceph_args);
-            goto error;
-        }
-    }
-
-    if (!nographics && (def->ngraphics == 0 || have_sdl)) {
-        virDomainGraphicsDefPtr sdl;
-        const char *display = qemuFindEnv(progenv, "DISPLAY");
-        const char *xauth = qemuFindEnv(progenv, "XAUTHORITY");
-        if (VIR_ALLOC(sdl) < 0)
-            goto error;
-        sdl->type = VIR_DOMAIN_GRAPHICS_TYPE_SDL;
-        sdl->data.sdl.fullscreen = fullscreen;
-        if (VIR_STRDUP(sdl->data.sdl.display, display) < 0) {
-            VIR_FREE(sdl);
-            goto error;
-        }
-        if (VIR_STRDUP(sdl->data.sdl.xauth, xauth) < 0) {
-            VIR_FREE(sdl);
-            goto error;
-        }
-
-        if (VIR_APPEND_ELEMENT(def->graphics, def->ngraphics, sdl) < 0) {
-            virDomainGraphicsDefFree(sdl);
             goto error;
         }
     }

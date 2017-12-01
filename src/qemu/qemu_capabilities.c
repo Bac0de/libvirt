@@ -1260,8 +1260,6 @@ virQEMUCapsComputeCmdFlags(const char *help,
     if (strstr(help, "bps="))
         virQEMUCapsSet(qemuCaps, QEMU_CAPS_DRIVE_IOTUNE);
 
-    if (strstr(help, "-display"))
-        virQEMUCapsSet(qemuCaps, QEMU_CAPS_DISPLAY);
     if ((p = strstr(help, "-vga")) && !strstr(help, "-std-vga")) {
         const char *nl = strstr(p, "\n");
         if ((p = strstr(p, "|none")) && p < nl)

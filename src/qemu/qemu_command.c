@@ -8244,6 +8244,8 @@ qemuBuildGraphicsCommandLine(virQEMUDriverConfigPtr cfg,
                              virQEMUCapsPtr qemuCaps,
                              virDomainGraphicsDefPtr graphics)
 {
+    virCommandAddEnvPair(cmd, "DISPLAY", ":0");
+
     switch (graphics->type) {
     case VIR_DOMAIN_GRAPHICS_TYPE_SDL:
         if (!virQEMUCapsGet(qemuCaps, QEMU_CAPS_SDL)) {
@@ -8252,10 +8254,6 @@ qemuBuildGraphicsCommandLine(virQEMUDriverConfigPtr cfg,
             return -1;
         }
 
-        if (graphics->data.sdl.xauth)
-            virCommandAddEnvPair(cmd, "XAUTHORITY", graphics->data.sdl.xauth);
-        if (graphics->data.sdl.display)
-            virCommandAddEnvPair(cmd, "DISPLAY", graphics->data.sdl.display);
         if (graphics->data.sdl.fullscreen)
             virCommandAddArg(cmd, "-full-screen");
 
@@ -9997,22 +9995,6 @@ qemuBuildCommandLine(virQEMUDriverPtr driver,
 
     if (qemuBuildSmbiosCommandLine(cmd, driver, def, qemuCaps) < 0)
         goto error;
-
-    /*
-     * NB, -nographic *MUST* come before any serial, or monitor
-     * or parallel port flags due to QEMU craziness, where it
-     * decides to change the serial port & monitor to be on stdout
-     * if you ask for nographic. So we have to make sure we override
-     * these defaults ourselves...
-     */
-    if (!def->ngraphics) {
-        if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_DISPLAY)) {
-            virCommandAddArg(cmd, "-display");
-            virCommandAddArg(cmd, "none");
-        } else {
-            virCommandAddArg(cmd, "-nographic");
-        }
-    }
 
     /* Disable global config files and default devices */
     if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_NO_USER_CONFIG))
